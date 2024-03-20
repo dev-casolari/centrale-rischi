@@ -1,0 +1,72 @@
+from utils import italian_date_to_datetime, create_df_from_pdf
+
+import plotly.express as px
+import streamlit as st
+import pandas as pd
+import os
+
+st.set_page_config(page_title="ANALISI CENTRALE RISCHI",
+                   page_icon=":bar_chart:",
+                   layout="wide")
+st.title(" :bar_chart: Analisi CR")
+st.markdown('<style>div.block-container{padding-top:1rem;}</style>',
+            unsafe_allow_html=True)
+
+# Streamlit file uploader
+pdf_file = st.file_uploader(":file_folder: Upload a file", type=(["pdf"]))
+
+if pdf_file:
+
+  # Leggi il contenuto del file PDF
+  df = create_df_from_pdf(pdf_file)
+
+  # Create a mask based on the specified conditions
+  mask = ((df['Accordato'] == df['Accordato Operativo']) |
+          (df['Accordato'] == df['Utilizzato']) |
+          (df['Accordato Operativo'] == df['Utilizzato']))
+
+  # Apply the mask to filter the DataFrame
+  df = df[mask]
+  st.write(df)
+
+  col1, col2 = st.columns((2))
+  df['Periodo_dt'] = df['Periodo'].apply(italian_date_to_datetime)
+
+  startDate = pd.to_datetime(df["Periodo_dt"]).min()
+  endDate = pd.to_datetime(df["Periodo_dt"]).max()
+
+  with col1:
+    date1 = pd.to_datetime(st.date_input("Start Date", startDate))
+
+  with col2:
+    date2 = pd.to_datetime(st.date_input("End Date", endDate))
+
+  df = df[(df["Periodo_dt"] >= date1) & (df["Periodo_dt"] <= date2)].copy()
+
+  # Filter the DataFrame to include only "RISCHI AUTOLIQUIDANTI" and "RISCHI A SCADENZA"
+  filtered_df = df[df['Categoria'].isin(
+      ['RISCHI AUTOLIQUIDANTI', 'RISCHI A REVOCA'])]
+  # Create a new DataFrame with the desired calculation
+  ratio_df = filtered_df.groupby('Periodo_dt').apply(lambda group: group[
+      'Utilizzato'].sum() / group['Accordato Operativo'].sum()).reset_index(
+          name='Utilizzato su Acc. Operativo')
+  ratio_df = ratio_df.sort_values('Periodo_dt')
+  ratio_df['Utilizzato su Acc. Operativo (%)'] = ratio_df[
+      'Utilizzato su Acc. Operativo'] * 100
+
+  # with col1:
+  #   st.subheader("Utilizzato su Accordato Operativo")
+  #   fig = px.bar(ratio_df,
+  #                x="Periodo_dt",
+  #                y="Utilizzato su Acc. Operativo (%)",
+  #                template="seaborn")
+  #   st.write(ratio_df)
+  #   st.plotly_chart(fig, height=200)
+  #   st.subheader("Utilizzato su Accordato Operativo per Intermediario")
+  #   st.write(filtered_df.groupby('Periodo_dt'))
+
+  # with col2:
+  #   st.subheader("Utilizzato per Intermediario")
+  #   fig = px.pie(df, values="Utilizzato", names="Intermediario", hole=0.5)
+  #   fig.update_traces(text=df["Intermediario"], textposition="outside")
+  #   st.plotly_chart(fig, use_container_width=True)
