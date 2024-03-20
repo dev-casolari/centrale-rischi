@@ -2,8 +2,32 @@ from datetime import datetime
 
 import pandas as pd
 import pdfplumber
+import logging
 import locale
+import time
 import re
+
+# logger conf
+logging.basicConfig(filename='example.log', level=logging.INFO, 
+  format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger(__name__)
+
+# logger console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+logging.getLogger().addHandler(console_handler)
+
+
+def measure_time(func):
+  def wrapper(*args, **kwargs):
+      start_time = time.time()
+      result = func(*args, **kwargs)
+      end_time = time.time()
+      log.info(f"Function '{func.__name__}' took {end_time - start_time:.6f} seconds to execute.")
+      return result
+  return wrapper
 
 
 def extract_text_segments(pdf_path):
@@ -112,6 +136,7 @@ def italian_date_to_datetime(italian_date):
 
   return date_object
 
+@measure_time
 def create_df_from_pdf(pdf_path):
 
   # Replace 'your_pdf_file.pdf' with the path to your PDF file
