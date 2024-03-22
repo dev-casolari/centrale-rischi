@@ -22,10 +22,11 @@ logging.getLogger().addHandler(console_handler)
 
 def measure_time(func):
   def wrapper(*args, **kwargs):
+      log.info(f"Function '{func.__name__}' started")
       start_time = time.time()
       result = func(*args, **kwargs)
       end_time = time.time()
-      log.info(f"Function '{func.__name__}' took {end_time - start_time:.6f} seconds to execute.")
+      log.info(f"Function '{func.__name__}' ended in {end_time - start_time:.1f} seconds")
       return result
   return wrapper
 
@@ -92,22 +93,6 @@ def extract_intermediario_section(text):
 
   return sections
 
-
-# def italian_date_to_datetime(italian_date):
-
-#   # Set the Italian locale
-#   locale.setlocale(locale.LC_ALL, 'it_IT')
-
-#   # Specify the format of the Italian date string
-#   italian_date_format = "%B %Y"
-
-#   # Convert the string to a datetime object
-#   date_object = datetime.strptime(italian_date, italian_date_format)
-
-#   # Reset the locale to the default
-#   locale.setlocale(locale.LC_TIME, '')
-
-#   return date_object  # Aggiungi questa riga per restituire l'oggetto datetime
 
 def italian_date_to_datetime(italian_date):
 
